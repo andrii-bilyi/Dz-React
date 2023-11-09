@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Пошук фільмів</title>
+    <link rel="stylesheet" href="Style.css">
+    <!-- React и ReactDOM CDN-посилання -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel CDN-посилання для трансляції JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body>
+
+    <div id="app"></div>
+
+    <script type="text/babel">
+        const apiKey = '66b72799';
+        const apiUrl = 'http://www.omdbapi.com/';
+
+        let _Title;
+        let _Type;
+
+        class SearchForm extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = {
+                    searchTitle: '',
+                    searchType: 'movie',
+                };
+            }
+
+            handleInputChange = (event) => {
+                this.setState({ [event.target.name]: event.target.value });
+            };
+
+            handleSubmit = (event) => {
+                event.preventDefault();
+                //this.props.searchMovies(this.state.searchTitle, this.state.searchType);
+                _Title = this.state.searchTitle;
+                _Type = this.state.searchType;
+                this.props.searchMovies(_Title, _Type);
+            };
+
+            render() {
+                return (
+                    <div>
+                        <h1>Search:</h1>
+                        <form onSubmit={this.handleSubmit}>
+                            <input
+                                className="movie-title"
+                                type="text"
+                                name="searchTitle"
+                                placeholder="Enter the name"
+                                value={this.state.searchTitle}
+                                onChange={this.handleInputChange}
+                            />
+                            <select
+                                className="movie-type"
+                                name="searchType"
+                                value={this.state.searchType}
+                                onChange={this.handleInputChange}
+                            >
+                                <option value="movie">Movie</option>
+                                <option value="series">Series</option>
+                                <option value="episode">Episode</option>
+                            </select>
+                            <button className="search-button" type="submit">Search</button>
+                        </form>
+                    </div>
+                );
+            }
+        }
+
+        class MovieList extends React.Component {
+            render() {
+                return (
+                    <div id="movies">
+                        {this.props.movies.map((movie) => (
+                            <div className="movie-item" key={movie.imdbID}>
+                                <img className="image-item" src={movie.Poster} alt={`${movie.Title} Poster`} />
+                                <div className="text-item">
+                                    <h4>{movie.Title}</h4>
+                                    <p>Type: {movie.Type}</p>
+                                    <p>Year: {movie.Year}</p>
+                                    <button onClick={() => this.props.showDetails(movie.imdbID)}>Details</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            }
+        }
+
+        class Pagination extends React.Component {
+            render() {
+                const pages = Array.from({ length: this.props.totalPages }, (_, i) => i + 1);
+
+                return (
+                    <div id="pagination">
+                        {pages.map((pageNumber) => (
+                            <button
+                                className="page-button"
+                                key={pageNumber}
+                                onClick={() => this.props.loadPage(pageNumber)}
+                            >
+                                {pageNumber}
+                            </button>
+                        ))}
+                    </div>
+                );
+            }
+        }
+
+        class MovieDetails extends React.Component {
+            render() {
+                const { movie } = this.props;
+                if (!movie) {
+                    return null;
+                }
+
+                return (
+                    <div id="movie-details">
+                        <div className="movie-Details">
+                            <img className="Details-img" src={movie.Poster} alt={`${movie.Title} Poster`} />
+                            <div className="Details-text">
+                                <table>
+                                    <tbody>
+                                        <tr>
+                                            <td>Title:</td>
+                                            <td>{movie.Title}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Released:</td>
+                                            <td>{movie.Released}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Genre:</td>
+                                            <td>{movie.Genre}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Country:</td>
+                                            <td>{movie.Country}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Director:</td>
+                                            <td>{movie.Director}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Writer:</td>
+                                            <td>{movie.Writer}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Actors:</td>
+                                            <td>{movie.Actors}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Awards:</td>
+                                            <td>{movie.Awards}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        class App extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = {
+                    movies: [],
+                    totalPages: 0,
+                    currentPage: 1,
+                    selectedMovie: null,
+                    // searchTitle: '',
+                    // searchType: 'movie',
+                };
+            }
+
+            searchMovies = (title, type, page = 1) => {
+                console.log('Searching for:', title, type, 'Page:', page);
+                fetch(`${apiUrl}?apiKey=${apiKey}&s=${title}&type=${type}&page=${page}&r=json`)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.Response === 'True') {
+                            this.setState({
+                                movies: data.Search,
+                                totalPages: Math.ceil(data.totalResults / 10),
+                                selectedMovie: null,
+                            });
+                        } else {
+                            this.setState({
+                                movies: [],
+                                totalPages: 0,
+                                selectedMovie: null,
+                            });
+                        }
+                    });
+            };
+
+            loadPage = (pageNumber) => {
+                console.log('Loading page:', pageNumber);
+                console.log('loadPage searchTitle:', this.state.searchTitle);
+                console.log('loadPage searchType:', this.state.searchType);
+                console.log('loadPage _Title:', _Title);
+                console.log('loadPage _Type:', _Type);
+                
+                //this.searchMovies(this.state.searchTitle, this.state.searchType, pageNumber);
+                this.searchMovies(_Title, _Type, pageNumber);
+                this.setState({ currentPage: pageNumber });
+            };
+
+            showDetails = (movieId) => {
+                console.log('Showing details for movie ID:', movieId);
+                fetch(`${apiUrl}?apiKey=${apiKey}&i=${movieId}&r=json`)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.Response === 'True') {
+                            this.setState({ selectedMovie: data });
+                        } else {
+                            this.setState({ selectedMovie: null });
+                        }
+                    });
+            };
+
+            render() {
+                return (
+                    <div className="App">
+                        <SearchForm
+                            searchMovies={this.searchMovies}
+                            searchTitle={this.state.searchTitle}
+                            searchType={this.state.searchType}
+                        />
+                        <MovieList movies={this.state.movies} showDetails={this.showDetails} />
+                        <Pagination
+                            totalPages={this.state.totalPages}
+                            loadPage={this.loadPage}
+                            searchTitle={this.state.searchTitle}
+                            searchType={this.state.searchType}
+                        />
+                        <MovieDetails movie={this.state.selectedMovie} />
+                    </div>
+                );
+            }
+        }
+
+        ReactDOM.render(<App />, document.getElementById('app'));
+    </script>   
+</body>
+
+</html>
