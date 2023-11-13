@@ -178,6 +178,7 @@
                     selectedMovie: null,
                     // searchTitle: '',
                     // searchType: 'movie',
+                    noResults: false, // Додано стан для відстеження відсутності результатів
                 };
             }
 
@@ -191,12 +192,14 @@
                                 movies: data.Search,
                                 totalPages: Math.ceil(data.totalResults / 10),
                                 selectedMovie: null,
+                                noResults: false, // Змінити стан, оскільки є результати
                             });
                         } else {
                             this.setState({
                                 movies: [],
                                 totalPages: 0,
                                 selectedMovie: null,
+                                noResults: true, // Змінити стан, оскільки немає результатів
                             });
                         }
                     });
@@ -208,7 +211,7 @@
                 console.log('loadPage searchType:', this.state.searchType);
                 console.log('loadPage _Title:', _Title);
                 console.log('loadPage _Type:', _Type);
-                
+
                 //this.searchMovies(this.state.searchTitle, this.state.searchType, pageNumber);
                 this.searchMovies(_Title, _Type, pageNumber);
                 this.setState({ currentPage: pageNumber });
@@ -235,21 +238,27 @@
                             searchTitle={this.state.searchTitle}
                             searchType={this.state.searchType}
                         />
-                        <MovieList movies={this.state.movies} showDetails={this.showDetails} />
-                        <Pagination
-                            totalPages={this.state.totalPages}
-                            loadPage={this.loadPage}
-                            searchTitle={this.state.searchTitle}
-                            searchType={this.state.searchType}
-                        />
-                        <MovieDetails movie={this.state.selectedMovie} />
+                        {this.state.noResults ? (
+                            <div className="no-results-message">No results found. Please try again!</div>
+                        ) : (
+                            <>
+                                <MovieList movies={this.state.movies} showDetails={this.showDetails} />
+                                <Pagination
+                                    totalPages={this.state.totalPages}
+                                    loadPage={this.loadPage}
+                                    searchTitle={this.state.searchTitle}
+                                    searchType={this.state.searchType}
+                                />
+                                <MovieDetails movie={this.state.selectedMovie} />
+                            </>
+                        )}
                     </div>
                 );
             }
         }
 
         ReactDOM.render(<App />, document.getElementById('app'));
-    </script>   
+    </script>
 </body>
 
 </html>
